@@ -25,33 +25,17 @@ astrbot_plugin_group_chat_plus/
 │   ├── DESKTOP_COMPATIBILITY.md # AstrBot 桌面端兼容说明
 │   └── PROJECT_STRUCTURE.md    # 本文件
 │
-├── web/                        # 🖥️ Web 管理面板
+├── views/                      # 🖥️ Web 管理面板（AstrBot WebUI 内置插件视图）
+│   └── panel/
+│       ├── index.html          # 面板入口页（由 Dashboard 以受限 iframe 加载）
+│       └── static/             # 前端静态资源（相对路径引用）
+│           ├── css/            # 样式文件（main/config-panel/charts/tech-tree）
+│           ├── img/            # logo 等图片
+│           └── js/             # api.js(bridge 封装)/app.js/charts.js/...
+│
+├── web/                        # 🖥️ 面板后端模块
 │   ├── __init__.py
-│   ├── server.py               # HTTP 服务器（路由/中间件/API）
-│   ├── auth.py                 # 认证模块（密码/JWT）
-│   ├── security.py             # 安全管理器（防护/封禁/日志）
-│   ├── templates/              # HTML 页面模板
-│   │   ├── login.html          # 登录页
-│   │   ├── panel.html          # 管理面板页
-│   │   └── error.html          # 错误/拦截页
-│   └── static/                 # 前端静态资源
-│       ├── css/                # 样式文件
-│       │   ├── main.css        # 主题系统（亮/暗色）
-│       │   ├── login.css       # 登录页样式
-│       │   ├── config-panel.css# 配置编辑器样式
-│       │   ├── charts.css      # 图表样式
-│       │   └── tech-tree.css   # 技术树样式
-│       └── js/                 # JavaScript 模块
-│           ├── api.js          # HTTP 客户端 & Token 管理
-│           ├── auth.js         # 前端认证逻辑
-│           ├── app.js          # 面板入口
-│           ├── charts.js       # 统计图表
-│           ├── config-editor.js# 配置可视化编辑器
-│           ├── flow-data.js    # 消息流程可视化数据
-│           ├── prompt-data.js  # 系统提示词模板数据
-│           ├── session-mgr.js  # 会话管理
-│           ├── tech-tree.js    # 技术树可视化
-│           └── utils.js        # 通用工具函数
+│   ├── panel_api.py            # PanelApi：register_web_api 路由 + 业务 handler
 │
 ├── utils/                      # 🧩 群聊工具模块
 │   ├── __init__.py             # 模块导出
@@ -136,83 +120,59 @@ astrbot_plugin_group_chat_plus/
 
 ---
 
-## web/ — Web 管理面板
+## views/ — Web 管理面板前端（AstrBot WebUI 内置插件视图）
 
-> v1.2.1 新增的完整 Web 管理界面。
+> v1.2.4 起，面板迁移为 AstrBot 4.29+ 内置的插件可视化视图：页面放在 `views/<view_name>/`，由 Dashboard 以受限 iframe 加载，前端通过 `window.AstrBotPluginView` bridge 调用后端。
 
-### server.py — HTTP 服务器
+### views/panel/index.html — 面板入口页
 
-Web 面板的核心文件，基于 `aiohttp` 构建，包含：
+加载各 JS 模块，包含 6 个功能视图（配置流程图 / 数据可视化 / 会话管理 / 指令执行 / 核心设置 / 文件管理）。脚本顺序：
 
-- **路由注册** — 登录页、面板页、API 端点、静态资源
-- **中间件链** — 路径遍历防护 → 登录页公开静态资源 → robots.txt → IP 访问控制（在被封 IP 级阻断，非 API 请求重定向至 `/error?code=blocked` 统一渲染，`/error` 路径放行避循环；IP 检查前置于面板静态资源和所有受保护路由）→ 面板静态资源 JWT 验证 → 内部静态资源封锁 → 防爬虫检测 → JWT 认证 → 安全头注入
-- **安全响应头** — X-Content-Type-Options / X-Frame-Options / X-XSS-Protection / Referrer-Policy / Permissions-Policy 等
-- **Content-Security-Policy** — 基于 nonce 的严格 CSP（script-src 使用 nonce 替代 unsafe-inline，防止 XSS 注入）
-- **敏感文件保护** — Web 文件管理 API 对 `auth.json`、`jwt_secret.json`、`sessions.json`、`access_log*`、`bans.json` 实施访问控制（返回 403）
-- **会话与重置边界** — 会话管理优先围绕插件自定义 `chat_history/...` 历史文件与当前运行态工作；全局重置、单会话重置、图片缓存清理在服务端各自收口，互不串改
-- **API 处理器**：
-  - `/api/login` — 用户认证
-  - `/api/change-password` — 密码修改
-  - `/api/config` — 配置读取与保存
-  - `/api/config/download` — 配置文件安全下载（只读，无路径参数，JSON 响应，访问日志附注记录成功/失败原因）
-  - `/api/stats` — 统计数据
-  - `/api/logs` — 访问日志
-  - `/api/bans` — 封禁管理
-- **静态资源服务** — 区分公共静态（`/static/`）和受保护静态（`/panel/static/`）
+`/api/plugin/page/bridge-sdk.js` → `utils.js` → `api.js` → `flow-data.js` → `prompt-data.js` → `tech-tree.js` → `config-editor.js` → `charts.js` → `session-mgr.js` → `app.js`
 
-### auth.py — 认证模块
-
-- **密码管理** — 默认使用 Argon2id 内存硬化哈希，兼容验证旧版 PBKDF2-SHA256，并在首次成功登录后自动透明迁移
-- **JWT 管理** — Token 创建、验证、过期检查、IP 绑定；JWT 签名密钥独立存储于 `jwt_secret.json`（与密码哈希物理隔离）
-- **认证文件分离** — `auth.json` 仅存储密码相关数据（哈希/salt/hash_version/password_changed），`jwt_secret.json` 存储 JWT 密钥及会话管理数据
-- **自动迁移** — 启动时检测旧版格式（auth.json 中含 jwt_secret），自动分离到独立文件
-- **默认密码机制** — 首次安装/重置生成随机密码，以 WARNING 级别输出到 AstrBot 日志并附带安全警告；用户修改密码后明文副本自动清除且不再输出
-
-### security.py — 安全管理器
-
-- **暴力破解防护** — 分级锁定（5/10/15/20 次失败 → 30/60/300/600 秒锁定）
-- **防爬虫检测** — User-Agent 匹配、请求频率限制（已登录/未登录双档独立阈值）、扫描路径模式识别。自动刷新和心跳请求不计入速率滑动窗口，手动刷新和用户操作正常受速率约束
-- **IP 封禁** — 手动封禁 + 自动封禁，封禁持久化（`bans.json`），重启恢复
-- **访问日志** — 记录所有请求，支持按类型/IP/时间筛选
-
-### templates/ — HTML 模板
-
-| 文件 | 说明 |
-|------|------|
-| `login.html` | 登录页面，公开访问，独立于面板代码 |
-| `panel.html` | 管理面板主页面，需 JWT 认证。加载各 JS 模块 |
-| `error.html` | 统一错误页面，服务端注入 code 占位符（`blocked`/`403`/`404`），blocked 状态不展示封禁原因/时长/触发机制，仅显示通用提示并自动轮询解封 |
-
-### static/css/ — 样式文件
+### views/panel/static/css/ — 样式文件
 
 | 文件 | 说明 |
 |------|------|
 | `main.css` | 主样式 + 主题系统。`:root` 定义暗色变量，`:root[data-theme="light"]` 定义亮色变量 |
-| `login.css` | 登录页专用样式 |
 | `config-panel.css` | 配置编辑器的复杂表单样式 |
 | `charts.css` | 统计图表样式 |
 | `tech-tree.css` | 技术树/功能关联图谱样式 |
 
-### static/js/ — JavaScript 模块
+### views/panel/static/js/ — JavaScript 模块
 
 | 文件 | 说明 |
 |------|------|
-| `api.js` | HTTP 客户端封装，自动携带 Bearer Token，统一错误处理 |
-| `auth.js` | 前端认证逻辑，Token 存取 |
-| `app.js` | 面板应用入口，初始化各模块，管理视图切换。包含文件管理（手动刷新+提示）、核心设置（心跳状态自动/手动刷新）、访问日志（含无自动刷新提示与 tooltip 展示）、IP 封禁管理（含备注长度限制与换行显示）等功能 |
-| `charts.js` | 基于 Canvas 的实时统计图表（概览、注意力、概率、情绪、主动对话），支持 3 秒自动刷新和手动刷新（按钮始终可见，带 toast 反馈）。无会话时只刷新全局概览 |
+| `api.js` | bridge 客户端封装：惰性获取 `window.AstrBotPluginView`，`apiGet/apiPost/download` 统一转发到插件后端，异常转 `{ok:false,msg}` |
+| `app.js` | 面板应用入口，初始化各模块、管理视图切换、主题同步（跟随 Dashboard）、文件管理、核心设置 |
+| `charts.js` | 基于 Canvas 的实时统计图表（概览、注意力、概率、情绪、主动对话），支持自动刷新和手动刷新 |
 | `config-editor.js` | 配置可视化编辑器，根据 JSON Schema 动态生成表单 |
 | `flow-data.js` | 消息处理流程的可视化数据定义 |
 | `prompt-data.js` | 系统提示词模板的预置数据（读空气AI / 回复AI / 主动对话AI / 主动对话判断AI） |
-| `session-mgr.js` | 会话管理界面（会话列表和详情页均支持 3 秒自动刷新和手动刷新，带 toast 反馈）。列表页进入详情时暂停轮询，返回时恢复。聊天记录使用增量更新保持滚动位置，编辑模式下暂停自动刷新 |
-| `tech-tree.js` | 技术树/功能关联图谱的渲染逻辑，包含系统提示词悬浮窗（拖拽/缩放/视口约束/移动端触摸）、右下角缩放控件（放大/缩小/适应屏幕按钮、Ctrl+滚轮缩放、双指捏合缩放）、智能搜索、面包屑导航、SVG+DOM 混合渲染、粒子动画 |
-| `utils.js` | 通用工具函数（格式化、DOM 操作、Toast/Confirm/Prompt 弹窗，Prompt 支持 maxLength 字数限制与实时计数） |
+| `session-mgr.js` | 会话管理界面（会话列表和详情页自动刷新、聊天记录增量更新、编辑模式暂停轮询） |
+| `tech-tree.js` | 技术树/功能关联图谱渲染（悬浮窗拖拽缩放、缩放控件、智能搜索、面包屑、SVG+DOM 混合渲染） |
+| `utils.js` | 通用工具函数（格式化、DOM 操作、Toast/Confirm/Prompt 弹窗） |
 
----
+## web/ — Web 管理面板后端
 
-## utils/ — 群聊工具模块
+> v1.2.4 起不再包含独立 HTTP 服务器；`auth.py`、`server.py`、`templates/`、`static/` 已移除。
 
-> 每个模块负责一个独立功能，由 `main.py` 统一创建和管理实例。
+### panel_api.py — 面板 API
+
+类 `PanelApi(plugin)`，`register(context)` 通过 `context.register_web_api()` 注册 31 条路由（统一前缀 `/{插件名}/`），handler 使用 `astrbot.api.web` 的 `request` / `json_response` / `error_response` / `file_response`：
+
+- **配置**：`GET/POST /config`、`POST /config/reload`、`GET /config/download`
+- **数据**：`/data/sessions`、`/data/attention/<session>`、`/data/mood/<session>`、`/data/probability/<session>`、`/data/proactive`、`/data/overview`、`/data/status`、`/data/session-detail/<session>`
+- **会话**：`/session/list`、`/session/reset/<session>`、`/session/clear-image-cache`、`/session/clean-ghosts`、`GET/POST /session/chat-history/<session>`、`/session/image-cache`
+- **指令**：`/commands/reset`、`/commands/reset-here`、`/commands/clear-image-cache`、`/commands/restart-status`
+- **安全**：`/security/access-log`、`/security/bans`、`/security/ban`、`/security/unban`、`/security/update-ban-note`、`GET/POST /security/ip-config`
+- **文件**：`/files/list`、`/files/read`、`/files/save`、`/files/delete`
+
+每个 handler 外包一层 `_wrap`：IP 访问控制校验 + 访问日志记录 + 异常兜底（500）。
+
+- **敏感文件保护**：文件管理 API 对 `sessions.json` 实施访问控制（返回 403）
+- **会话与重置边界**：会话管理围绕插件自定义 `chat_history/...` 历史文件与当前运行态工作；全局重置、单会话重置、图片缓存清理各自收口，互不串改
+- **延迟重载/重启**：保存配置后可触发插件重载或 AstrBot 重启，任务延迟执行以避免打断当前 HTTP 响应（通过 Dashboard REST API，失败时降级到 `star_manager.reload()`）
 
 ### 核心决策模块
 
@@ -319,10 +279,6 @@ private_chat/
 | 文件 | 说明 |
 |------|------|
 | `history_cutoff.json` | 历史截止时间戳，记录 `gcp_reset` / `gcp_reset_here` 设置的截止点，用于过滤旧的 `platform_message_history` 历史 |
-| `bans.json` | IP 封禁记录持久化（Web 面板） |
-| `web_data/auth.json` | Web 面板密码数据（密码哈希、salt、hash_version、password_changed 标志） |
-| `web_data/jwt_secret.json` | Web 面板 JWT 签名密钥及会话管理数据（与 auth.json 物理隔离） |
-| `web_data/sessions.json` | Web 面板服务端会话表（多浏览器/多标签登录态） |
 | `image_cache/descriptions.jsonl` | 图片描述缓存主文件。Web 面板和指令清理图片缓存时优先处理此文件；如检测到旧版 `image_description_cache.json` 残留路径，也会兼容清理 |
 
 ---
@@ -334,16 +290,15 @@ private_chat/
                      (插件主入口)
                     ┌──────┼──────┐
                     ↓      ↓      ↓
-               web/    utils/   private_chat/
-            (管理面板) (群聊工具)  (私聊模块 ⚠️)
+        views/ + web/   utils/   private_chat/
+        (管理面板)     (群聊工具)  (私聊模块 ⚠️)
                     ↓
-        ┌───────────┼───────────┐
-        ↓           ↓           ↓
-    server.py    auth.py    security.py
-    (路由/API)   (认证)     (安全防护)
-        ↓
-    templates/ + static/
-    (前端页面 + 资源)
+                panel_api.py
+              (注册 API 路由)
+                    ↓
+                    ▲
+              views/panel/
+        (bridge 前端页面 + 静态资源)
 ```
 
 ```

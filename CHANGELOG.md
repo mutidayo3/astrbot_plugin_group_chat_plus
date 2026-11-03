@@ -1,5 +1,21 @@
 ## 📝 更新日志
 
+### V1.2.4 (2026-11-03)
+
+**Web 管理面板全面迁移为 AstrBot WebUI 内置插件可视化视图（弃用独立面板服务器）**
+
+- **彻底移除独立 Web 服务器** - 删除基于 `aiohttp` 的自建面板服务（`web/server.py`）、自带密码/JWT 认证（`web/auth.py`）、登录页/错误页模板与旧前端静态资源；插件不再监听 `1451` 端口、不再生成面板密码、不再维护 JWT 会话与心跳
+- **迁移为内置插件视图** - 新增 `views/panel/`（入口页 + CSS/JS/图片），AstrBot Dashboard 以受限 iframe 加载；前端全部通过 `window.AstrBotPluginView` bridge 调用后端（`apiGet` / `apiPost` / `download`），主题自动跟随 WebUI 亮暗切换
+- **新增 `web/panel_api.py`** - 类 `PanelApi` 通过 `context.register_web_api()` 注册 31 条面板 API 路由（配置 / 数据 / 会话 / 指令 / 安全 / 文件），handler 使用 `astrbot.api.web` 的请求与响应 helper，统一包裹 IP 访问控制、访问日志与异常兜底
+- **鉴权改由 AstrBot 统一负责** - 面板打开、身份校验、会话管理完全复用 Dashboard，插件侧不再存储任何密码或令牌；`web_data/auth.json`、`jwt_secret.json`、`sessions.json` 不再使用（可安全删除）
+- **保留 IP 访问控制与审计** - `web_panel_ip_mode` / `web_panel_ip_list` / `web_panel_protected_ips` 依旧生效；每次面板 API 调用都会记录到 `web_data/access_log.jsonl`，手动封禁写入 `web_data/bans.json`；访问日志按 `web_panel_log_*` 配置节流自动清理
+- **兼容属性保留** - `enable_web_panel` / `web_panel_port` / `web_panel_host` 三个配置键与同名实例属性继续保留（供 `astrbot_plugin_self_learning` 等第三方插件通过 `getattr` 发现），但不再控制面板启停
+- **配置项清理** - `_conf_schema.json` 移除已失效的独立面板认证/防爬虫/暴力破解/心跳共 16 个配置键；`web_panel_ip_*`、`web_panel_log_*` 的说明同步更新
+- **面板页适配** - 删除登录/退出、密码修改、心跳状态、会话过期跳转等全部认证相关 UI；修复「支持作者 / 反馈BUG」在受限 iframe 中可能被拦截的弹窗问题（失败时提示手动复制链接）
+- **视图元数据** - 新增 `.astrbot-plugin/i18n/zh-CN.json`、`en-US.json`，为侧边栏提供「管理面板 / Management Panel」标题与描述
+- **依赖清理** - 移除 `argon2-cffi`（密码哈希已随认证模块移除）
+
+
 ### V1.2.3.hotfix.2 (2026-05-29)
 
 **AI 提示词注入顺序全面优化（缓存命中占比大幅提升）+ 逐插件上下文追踪全面升级（全字段覆盖+具名隔离）+ Agent 调用非图片媒体全链路扩展 + 消息元数据化防注入机制 + 戳一戳双层标注与引用消息格式重构 + 用户名称全链路兜底 + 主动对话重复启动防护 + 多轮工具调用链路修复 + IPV6 全面兼容管控 + Web 面板 UX 全面增强（自动刷新重构/心跳同步/图表主题适配/悬浮窗移动端适配/访问日志与封禁管理修复）+ AstrBot v4 重启认证升级 + 多项细节修复 + 文档全面更新**

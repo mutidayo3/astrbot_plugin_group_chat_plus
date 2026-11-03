@@ -85,7 +85,7 @@
 |----------|----------|--------|--------|
 | 插件数据目录 | `StarTools.get_data_dir()` | `<cwd>/data/plugin_data/astrbot_plugin_group_chat_plus/` | `~/.astrbot/data/plugin_data/astrbot_plugin_group_chat_plus/` |
 | 插件源码目录 | `Path(__file__).parent` | `<cwd>/data/plugins/astrbot_plugin_group_chat_plus/` | `~/.astrbot/data/plugins/astrbot_plugin_group_chat_plus/` |
-| Web 面板静态文件 | `Path(__file__).parent / "web/static"` | 同上相对路径 | 同上相对路径 |
+| 面板视图文件 | `Path(__file__).parent / "views/panel"` | 同上相对路径 | 同上相对路径 |
 
 **注意**：如需手动查找插件文件（排查问题），桌面端用户请前往 `~/.astrbot/data/plugins/` 目录。
 
@@ -197,28 +197,11 @@
 
 ## Web 面板注意事项
 
-### 端口冲突
+> v1.2.4 起面板已迁移为 AstrBot WebUI 内置插件可视化视图，**不再启动独立 HTTP 服务、不再占用独立端口**，因此不存在与本插件相关的端口冲突或反代配置要求。
 
-- AstrBot 仪表盘默认端口：`6185`
-- 本插件 Web 面板默认端口：`1451`
-
-两者端口不同，正常情况下不会冲突。但需注意：
-
-1. **桌面端绑定地址**：AstrBot 仪表盘默认绑定 `127.0.0.1`，本插件 Web 面板默认绑定 `0.0.0.0`
-2. **防火墙**：桌面端环境可能有更严格的防火墙设置
-3. **访问方式**：桌面端用户通常从本机访问，地址为 `http://127.0.0.1:1451`
-
-### HTTPS / 代理
-
-桌面端不自带反向代理。如需通过外网访问 Web 面板，用户需自行配置 Nginx/Caddy 等反代。
-
-补充说明：
-
-- 如果反代与 Web 面板部署在**同一台机器**，即使未开启 `web_panel_trust_proxy`，只要后端看到的连接来源是 `127.0.0.1 / ::1`，系统也会自动读取 `X-Real-IP / X-Forwarded-For` 获取真实客户端 IP
-- 如果反代**不在本机**，则需要显式开启 `web_panel_trust_proxy` 才会信任代理头
-- `web_panel_trust_proxy` 已归类为**安全边界配置**，现在只能通过 AstrBot 传统配置界面修改，Web 面板只读显示
-
----
+- **访问方式**：桌面端打开内置 WebUI，在左侧边栏「管理面板」中打开。
+- **鉴权**：复用 Dashboard 登录身份（桌面端自动登录），无需额外输入面板密码。
+- **反代**：只需按 AstrBot 官方文档配置 Dashboard 的反向代理；面板 API 路径为 `/api/v1/plugins/extensions/astrbot_plugin_group_chat_plus/...`，确保不被拦截。
 
 ## 插件安装与更新
 
@@ -266,12 +249,12 @@ git clone https://github.com/Him666233/astrbot_plugin_group_chat_plus.git
 - macOS：`/Users/<用户名>/.astrbot/data/plugin_data/astrbot_plugin_group_chat_plus/`
 - Linux：`/home/<用户名>/.astrbot/data/plugin_data/astrbot_plugin_group_chat_plus/`
 
-### Q: 桌面端 Web 面板无法访问
+### Q: 桌面端看不到「管理面板」入口
 
-1. 确认插件配置中 `enable_web_panel` 已开启
-2. 确认 `web_panel_port`（默认 1451）未被占用
-3. 桌面端环境下，使用 `http://127.0.0.1:1451` 访问
-4. 检查日志：`~/.astrbot/logs/backend.log`
+1. 确认插件已在桌面端启用并成功加载（检查日志：`~/.astrbot/logs/backend.log`）
+2. 确认插件目录下存在 `views/panel/index.html`
+3. 新增/删除视图目录后需要重载插件；修改静态资源一般刷新视图即可
+4. 若面板打开后报错，查看 AstrBot 日志中 `web.panel_api` 相关错误
 
 ### Q: 桌面端安装插件依赖失败
 

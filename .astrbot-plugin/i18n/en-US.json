@@ -1,0 +1,8 @@
+{
+    "views": {
+        "panel": {
+            "title": "Management Panel",
+            "description": "Visual management panel (config flow / charts / sessions / commands / access logs / settings / files)"
+        }
+    }
+}

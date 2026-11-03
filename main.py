@@ -32,7 +32,10 @@
 - @消息会跳过所有判断直接回复
 
 作者: Him666233
-版本: V1.2.3.hotfix.2
+版本: V1.2.4
+
+v1.2.4 更新内容：
+- 🔄 Web 管理面板迁移为 AstrBot WebUI 内置插件可视化视图（views/panel + register_web_api），移除独立端口、密码、JWT 会话与心跳；IP 访问控制与访问日志保留
 
 v1.2.1 更新内容：
 - 🆕 Web管理面板 - 全新可视化管理界面，支持JWT认证、访问日志、统计图表、IP安全管理
@@ -2450,8 +2453,7 @@ class ChatPlus(Star):
         self.enable_web_panel = config.get("enable_web_panel", False)
         self.web_panel_port = config.get("web_panel_port", 1451)
         self.web_panel_host = config.get("web_panel_host", "0.0.0.0")
-        self.web_panel_reset_password = config.get("web_panel_reset_password", False)
-        self._web_server = None  # Web 面板服务器实例
+        self._panel_api = None  # Web 管理面板 API 实例（AstrBot 内置插件视图后端）
 
         # ========== 配置参数集中提取区块结束 ==========
 
@@ -3494,29 +3496,18 @@ class ChatPlus(Star):
         elif not self.enable_group_chat and self.proactive_enabled:
             logger.info("⏸️ [主动对话] 群聊功能总开关已关闭，跳过启动主动对话后台任务")
 
-        # 🌐 启动 Web 配置面板
-        if self.enable_web_panel:
-            try:
-                from .web.server import WebPanelServer
+        # 🌐 注册 Web 管理面板 API（AstrBot WebUI 内置插件视图后端）
+        # 面板前端位于 views/panel/，由 AstrBot Dashboard 以插件可视化视图方式加载；
+        # 鉴权由 Dashboard 统一负责，插件侧仅注册业务 API。
+        try:
+            from .web.panel_api import PanelApi
 
-                self._web_server = WebPanelServer(
-                    self,
-                    host=self.web_panel_host,
-                    port=self.web_panel_port,
-                    data_dir=self.plugin_data_dir,
-                )
-
-                # 检测密码重置标志
-                if self.web_panel_reset_password:
-                    self._web_server.auth_mgr.reset_to_default()
-                    self.config["web_panel_reset_password"] = False
-                    self.config.save_config()
-                    logger.info("🌐 Web 面板密码已重置，新密码已输出到日志")
-
-                await self._web_server.start()
-            except Exception as e:
-                logger.error(f"🌐 Web 配置面板启动失败: {e}", exc_info=True)
-                self._web_server = None
+            self._panel_api = PanelApi(self)
+            self._panel_api.register(self.context)
+            logger.info("🌐 Web 管理面板 API 已注册（AstrBot WebUI 内置视图）")
+        except Exception as e:
+            logger.error(f"🌐 Web 管理面板 API 注册失败: {e}", exc_info=True)
+            self._panel_api = None
 
     async def terminate(self):
         """
@@ -3538,12 +3529,13 @@ class ChatPlus(Star):
         if hasattr(self, "session"):
             await self.session.close()
 
-        # 🌐 停止 Web 配置面板
-        if hasattr(self, "_web_server") and self._web_server:
+        # 🌐 清理 Web 管理面板 API（注销已注册路由；延迟重载/重启任务保持存活）
+        if getattr(self, "_panel_api", None) is not None:
             try:
-                await self._web_server.stop()
+                await self._panel_api.close()
             except Exception as e:
-                logger.error(f"🌐 Web 配置面板停止失败: {e}", exc_info=True)
+                logger.error(f"🌐 Web 管理面板清理失败: {e}", exc_info=True)
+            self._panel_api = None
 
     @filter.on_platform_loaded()
     async def on_platform_loaded(self):

@@ -4,19 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>Group Chat Plus - 配置面板</title>
-    <link rel="icon" href="/favicon.ico">
-    <link rel="stylesheet" href="/panel/static/css/main.css">
-    <link rel="stylesheet" href="/panel/static/css/tech-tree.css">
-    <link rel="stylesheet" href="/panel/static/css/config-panel.css">
-    <link rel="stylesheet" href="/panel/static/css/charts.css">
+    <title>Chat Plus 管理面板</title>
+    <link rel="icon" href="./static/img/logo.png">
+    <link rel="stylesheet" href="./static/css/main.css">
+    <link rel="stylesheet" href="./static/css/tech-tree.css">
+    <link rel="stylesheet" href="./static/css/config-panel.css">
+    <link rel="stylesheet" href="./static/css/charts.css">
     <meta name="robots" content="noindex, nofollow">
-    <script>
-        (function() {
-            var theme = localStorage.getItem('gcp_theme') || 'dark';
-            document.documentElement.setAttribute('data-theme', theme);
-        })();
-    </script>
 </head>
 <body>
 
@@ -31,17 +25,17 @@
             <button id="btn-mobile-menu" class="btn-icon" aria-label="打开菜单">☰</button>
             <div class="mobile-topbar-brand">
                 <span id="mobile-topbar-title">配置流程图</span>
-                <span class="mobile-topbar-version">__PLUGIN_VERSION__</span>
+                <span class="mobile-topbar-version">V1.2.4</span>
             </div>
         </div>
 
         <!-- 侧边栏 -->
         <nav id="sidebar">
             <div class="sidebar-header">
-                <img src="/api/logo" alt="Logo" class="sidebar-logo">
+                <img src="./static/img/logo.png" alt="Logo" class="sidebar-logo">
                 <div class="sidebar-brand">
                     <span class="sidebar-title">GCP 面板</span>
-                    <span class="sidebar-version">__PLUGIN_VERSION__</span>
+                    <span class="sidebar-version">V1.2.4</span>
                 </div>
             </div>
             <ul class="nav-list">
@@ -56,9 +50,6 @@
                 </li>
                 <li class="nav-item" data-view="commands">
                     <span class="nav-icon">⚡</span> 指令执行
-                </li>
-                <li class="nav-item" data-view="access-log">
-                    <span class="nav-icon">📋</span> 访问日志
                 </li>
                 <li class="nav-item" data-view="settings">
                     <span class="nav-icon">⚙️</span> 核心设置
@@ -77,7 +68,6 @@
                 <button id="btn-theme-toggle" class="btn btn-sm">🌙 切换主题</button>
                 <button id="btn-support-author" class="btn btn-sm">❤️ 支持作者</button>
                 <button id="btn-feedback" class="btn btn-sm">🐛 反馈BUG</button>
-                <button id="btn-logout" class="btn btn-sm">退出登录</button>
             </div>
         </nav>
 
@@ -155,14 +145,6 @@
                 <div id="commands-container"></div>
             </div>
 
-            <!-- 访问日志视图 -->
-            <div id="view-access-log" class="view hidden">
-                <div class="view-header">
-                    <h2>访问日志</h2>
-                </div>
-                <div id="access-log-container"></div>
-            </div>
-
             <!-- 面板设置视图 -->
             <div id="view-settings" class="view hidden">
                 <div class="view-header">
@@ -184,16 +166,19 @@
     <!-- Toast 通知 -->
     <div id="toast-container"></div>
 
-    <!-- JS（面板专用，由服务器 /panel/static/ 路由提供，需认证） -->
-    <script src="/panel/static/js/utils.js"></script>
-    <script src="/panel/static/js/api.js"></script>
-    <script src="/panel/static/js/flow-data.js"></script>
-    <script src="/panel/static/js/prompt-data.js"></script>
-    <script src="/panel/static/js/tech-tree.js"></script>
-    <script src="/panel/static/js/config-editor.js"></script>
-    <script src="/panel/static/js/charts.js"></script>
-    <script src="/panel/static/js/session-mgr.js"></script>
-    <script src="/panel/static/js/app.js"></script>
+    <!-- AstrBot 插件视图 bridge（为保证顺序显式引入） -->
+    <script src="/api/plugin/page/bridge-sdk.js"></script>
+
+    <!-- JS（插件视图，静态资源由 AstrBot 以路径令牌提供） -->
+    <script src="./static/js/utils.js"></script>
+    <script src="./static/js/api.js"></script>
+    <script src="./static/js/flow-data.js"></script>
+    <script src="./static/js/prompt-data.js"></script>
+    <script src="./static/js/tech-tree.js"></script>
+    <script src="./static/js/config-editor.js"></script>
+    <script src="./static/js/charts.js"></script>
+    <script src="./static/js/session-mgr.js"></script>
+    <script src="./static/js/app.js"></script>
 
     <!-- 移动端侧边栏抽屉控制 -->
     <script>

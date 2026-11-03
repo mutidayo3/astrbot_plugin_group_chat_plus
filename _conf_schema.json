@@ -1,160 +1,27 @@
 {
     "_web_panel_section_header": {
-        "description": "═══════════════ 🌐 Web 配置面板 ═══════════════",
+        "description": "══════════════ 🌐 Web 管理面板 ══════════════",
         "type": "string",
-        "hint": "以下是 Web 可视化配置面板的相关设置。开启后可通过浏览器访问插件的可视化配置界面",
-        "default": "--- Web 配置面板区 ---"
+        "hint": "Web 管理面板已迁移为 AstrBot WebUI 内置插件可视化视图（views/panel）：插件启用后自动出现在 WebUI 侧边栏，鉴权由 AstrBot Dashboard 统一负责，面板本身不再包含任何独立安全机制。下方仅保留供第三方插件发现用的兼容保留项。",
+        "default": "--- Web 管理面板配置 ---"
     },
     "enable_web_panel": {
-        "description": "🌐 启用 Web 配置面板",
+        "description": "🌐 兼容保留：启用 Web 面板（兼容项）",
         "type": "bool",
-        "hint": "开启后启动 Web 配置面板服务器，默认初始密码会随机生成，然后在日志中输出，可通过浏览器访问进行可视化配置管理。面板提供科技树式的消息流程图、实时数据图表、会话管理等功能。关闭后 Web 服务器不会启动",
+        "hint": "兼容保留项：新版 Web 管理面板已内置到 AstrBot WebUI（插件启用后自动出现在侧边栏的「管理面板」视图，鉴权由 AstrBot Dashboard 统一负责），此开关不再控制面板启停。该属性名与 web_panel_port / web_panel_host 一并保留，供 astrbot_plugin_self_learning 等第三方插件通过 getattr 发现使用。",
         "default": false
     },
     "web_panel_port": {
-        "description": "🌐 Web 面板端口",
+        "description": "🌐 兼容保留：Web 面板端口（兼容项）",
         "type": "int",
-        "hint": "Web 配置面板的监听端口，默认 1451。修改后需重启插件生效。请确保端口未被其他程序占用",
+        "hint": "兼容保留项：新版面板不再启动独立 HTTP 服务，此端口不再被使用。保留该配置键与同名实例属性，供 astrbot_plugin_self_learning 等第三方插件发现使用。",
         "default": 1451
     },
     "web_panel_host": {
-        "description": "🌐 Web 面板监听地址",
+        "description": "🌐 兼容保留：Web 面板监听地址（兼容项）",
         "type": "string",
-        "hint": "Web 面板监听的网络地址。0.0.0.0=所有 IPv4 接口，::=所有 IPv6 接口（启用双栈同时监听 IPv4+IPv6）。127.0.0.1 或 ::1=仅本机访问。默认 0.0.0.0（自动启用双栈）。\n\n⚠️ 优先级说明：此项是操作系统级别的网络限制，优先级高于下方的「IP 访问模式」。如果设为 127.0.0.1，则外部设备的请求根本无法到达服务器，下方的 IP 白名单/黑名单将完全无效。",
+        "hint": "兼容保留项：新版面板不再启动独立 HTTP 服务，此地址不再被使用。保留该配置键与同名实例属性，供 astrbot_plugin_self_learning 等第三方插件发现使用。",
         "default": "0.0.0.0"
-    },
-    "web_panel_ip_mode": {
-        "description": "🌐 Web 面板 IP 访问模式",
-        "type": "string",
-        "options": ["disabled", "whitelist", "blacklist"],
-        "hint": "IP 访问控制模式（应用层过滤），同时兼容 IPv4 和 IPv6。disabled=不过滤（允许所有IP），whitelist=仅允许名单内IP访问，blacklist=阻止名单内IP访问。默认 disabled。\n\n⚠️ 此配置需重启插件生效（在 Web 面板修改后点击「保存并重启插件」，或在此处修改后重启）。\n\n检查优先级（从高到低）：\n① 受保护 IP → 永远放行，不受任何机制影响\n② 本 IP 模式（黑名单/白名单）→ 白名单命中直接放行（跳过封禁检查），黑名单命中直接拒绝\n③ 封禁列表 → 手动封禁 + 防爬虫自动封禁共用同一封禁表\n④ 防爬虫实时检测\n\n⚠️ 特别注意：白名单模式下，白名单中的 IP 在②步直接放行，不再检查封禁列表，因此对白名单 IP 的封禁操作无效。",
-        "default": "disabled"
-    },
-    "web_panel_ip_list": {
-        "description": "🌐 Web 面板 IP 名单",
-        "type": "list",
-        "hint": "根据上方 IP 访问模式生效：白名单模式下仅这些 IP 可访问；黑名单模式下这些 IP 被阻止。留空=不过滤。\n\n⚠️ 仅支持单个 IP 地址的精确匹配（如 192.168.1.100 或 2001:db8::1）。不支持 CIDR 网段/IP段/域名。\n⚠️ 此配置需重启插件生效（与 Web 面板的「保存并重启插件」效果相同）。\n⚠️ 此名单仅在「IP 访问模式」不为 disabled 时生效。受保护 IP 不受此名单限制（永远放行）。\n\n白名单模式提示：白名单中的 IP 在放行后不再经过封禁检查，手动封禁或防爬虫自动封禁对白名单 IP 无效。",
-        "default": []
-    },
-    "web_panel_protected_ips": {
-        "description": "🌐 Web 面板受保护 IP（永不封禁）",
-        "type": "list",
-        "hint": "这些 IP 永远不会被封禁，拥有最高优先级：无论黑名单、白名单、手动封禁、暴力破解锁定等任何安全机制都无法阻止这些 IP 访问。用于保护管理员 IP 不被误封。留空=无特殊保护。\n\n⚠️ 仅支持单个 IP 地址的精确匹配。不支持 CIDR 网段/IP段。",
-        "default": []
-    },
-    "web_panel_reset_password": {
-        "description": "🌐 重置 Web 面板密码",
-        "type": "bool",
-        "hint": "⚠️ 紧急用途：设为开启后重启插件，将 Web 面板密码恢复为出厂默认随机值，然后在插件日志中输出当前的随机获得的默认密码，之后此开关自动关闭。用于忘记密码时的恢复手段",
-        "default": false
-    },
-    "web_panel_trust_proxy": {
-        "description": "🌐 信任反向代理",
-        "type": "bool",
-        "hint": "开启后无论连接来源 IP 是什么，都会读取 X-Real-IP / X-Forwarded-For 头获取真实客户端 IP。\n\n当 Web 面板部署在 Nginx/Caddy 等反向代理后面时开启此选项，否则访问日志、IP 封禁等功能只能看到代理服务器的 IP。\n\n⚠️ 注意：若直接暴露在公网（无代理），请保持关闭，否则客户端可伪造 IP 头绕过 IP 访问控制。\n当检测到连接来源是回环地址（127.x / ::1）时，即使此选项关闭，系统也会自动读取代理头。",
-        "default": false
-    },
-    "web_panel_ip_bind_check": {
-        "description": "🌐 登录 IP 绑定校验（防劫持）",
-        "type": "bool",
-        "hint": "开启后，登录时会将客户端 IP 绑定到 JWT 令牌中，后续每次请求都会校验当前 IP 是否与登录时一致。若 IP 发生变化，令牌将立即失效并要求重新登录，可有效防止令牌被劫持后在其他网络环境使用。\n\n⚠️ 如果您的网络环境 IP 经常变化（如移动网络、动态 IP 代理、某些云服务等），频繁的重新登录可能影响使用体验，此时可关闭此选项。\n\n🔒 此为安全敏感配置，仅可在此处（AstrBot 传统配置界面）修改，Web 面板中为只读显示。",
-        "default": true
-    },
-    "web_panel_log_auto_clean": {
-        "description": "🌐 访问日志自动清理",
-        "type": "bool",
-        "hint": "开启后，系统将按配置的时间间隔自动清理过期的访问日志文件，防止日志文件无限增长。关闭后需手动管理日志文件",
-        "default": false
-    },
-    "web_panel_log_retention_days": {
-        "description": "🌐 访问日志保留天数",
-        "type": "int",
-        "hint": "访问日志文件保留的最大天数。超过此天数的日志文件将被自动删除（需开启「访问日志自动清理」）。范围 1-365 天，默认 7 天",
-        "default": 7
-    },
-    "web_panel_log_clean_interval_hours": {
-        "description": "🌐 访问日志清理间隔（小时）",
-        "type": "int",
-        "hint": "自动清理日志的检查间隔，单位：小时。默认每 24 小时检查一次（需开启「访问日志自动清理」）。范围 1-168 小时",
-        "default": 24
-    },
-    "web_panel_anti_spider": {
-        "description": "🌐 启用防爬虫系统",
-        "type": "bool",
-        "hint": "开启后启用防爬虫保护机制（对 IPv4 和 IPv6 地址均生效）：\n① 在 /robots.txt 发布「君子协议」，告知所有爬虫禁止访问\n② 检测异常访问行为（高频请求、可疑 User-Agent、扫描行为等）\n③ 对触发阈值的可疑 IP 自动临时封禁\n④ 相关事件记录在访问日志中可查看\n\n防误封机制：受保护 IP 名单中的 IP 不受防爬虫影响；IP 在白名单中时也不会被自动封禁",
-        "default": false
-    },
-    "web_panel_anti_spider_rate_limit": {
-        "description": "🌐 防爬虫：触发速率阈值（次/分钟）",
-        "type": "int",
-        "hint": "同一 IP 在 1 分钟内请求次数超过此阈值，将被识别为可疑爬虫行为并临时封禁（需开启「防爬虫系统」）。默认 60 次/分钟，过低可能误封正常用户",
-        "default": 60
-    },
-    "web_panel_anti_spider_ban_duration": {
-        "description": "🌐 防爬虫：临时封禁时长（秒）",
-        "type": "int",
-        "hint": "被防爬虫系统识别为爬虫后，临时封禁的时长（秒）。默认 300 秒（5分钟）。注意：此封禁会显示在「IP 封禁管理」中，可手动解封（需开启「防爬虫系统」）",
-        "default": 300
-    },
-    "web_panel_authenticated_rate_limit": {
-        "description": "🌐 已登录请求速率阈值（次/分钟）",
-        "type": "int",
-        "hint": "已登录后的请求也会参与频率保护，但会使用单独阈值，避免普通匿名爬虫阈值过低时误伤正常面板操作。心跳请求不会触发封禁，但会正常记录会话活跃状态。默认值比匿名阈值更宽松。",
-        "default": 240
-    },
-    "web_panel_brute_force_window": {
-        "description": "🔒 暴力破解：失败计数重置窗口（秒）",
-        "type": "int",
-        "hint": "指定时间内没有新的登录失败记录时，自动清零该 IP 的失败计数，防止普通用户因偶尔输错密码而长期累积触发锁定。默认 3600 秒（1 小时）。设为 0 永不过期（不推荐）。\n\n🔒 此项为安全敏感配置，仅可在 AstrBot 传统配置界面修改，Web 面板中为只读显示。",
-        "default": 3600
-    },
-    "web_panel_brute_force_rate_window": {
-        "description": "🔒 暴力破解：频率检测窗口（秒）",
-        "type": "int",
-        "hint": "在此时间窗口内，如果同一 IP 的登录失败次数达到「频率检测触发次数」，则直接封禁该 IP（跳过阶梯锁定），用于快速阻断脚本批量爆破。默认 10 秒。设为 0 关闭频率检测。\n\n🔒 此项为安全敏感配置，仅可在 AstrBot 传统配置界面修改，Web 面板中为只读显示。",
-        "default": 10
-    },
-    "web_panel_brute_force_rate_count": {
-        "description": "🔒 暴力破解：频率检测触发次数",
-        "type": "int",
-        "hint": "在「频率检测窗口」内，登录失败次数达到此值时触发 IP 封禁。默认 3 次。建议 2-5 之间：过小容易误伤正常用户，过大则失去快速拦截脚本攻击的意义。\n\n🔒 此项为安全敏感配置，仅可在 AstrBot 传统配置界面修改，Web 面板中为只读显示。",
-        "default": 3
-    },
-    "web_panel_brute_force_tiers": {
-        "description": "🔒 暴力破解：阶梯锁定配置",
-        "type": "text",
-        "hint": "JSON 格式的阶梯锁定规则，格式为 [[失败次数, 锁定秒数], ...]。系统会自动按失败次数从小到大排序。默认：[[5,30],[10,60],[15,300],[20,600],[30,1800],[50,3600]]。修改后需重载插件生效。\n\n🔒 此项为安全敏感配置，仅可在 AstrBot 传统配置界面修改，Web 面板中为只读显示。",
-        "default": "[[5,30],[10,60],[15,300],[20,600],[30,1800],[50,3600]]"
-    },
-    "web_panel_brute_force_ban_duration": {
-        "description": "🔒 暴力破解：频率异常/最大阈值封禁时长（秒）",
-        "type": "int",
-        "hint": "当触发频率检测封禁或达到最大锁定阶梯后继续尝试时，封禁该 IP 的时长（秒）。0 = 永久封禁（写入 bans.json 持久化保存）。默认 0。\n\n🔒 此项为安全敏感配置，仅可在 AstrBot 传统配置界面修改，Web 面板中为只读显示。",
-        "default": 0
-    },
-    "web_panel_heartbeat_visible_interval_seconds": {
-        "description": "🌐 前台心跳间隔（秒）",
-        "type": "int",
-        "hint": "当前台页面可见时，浏览器会按此间隔主动检测会话是否仍然有效，用于尽快发现令牌过期、密码修改、服务端重启等状态变化。默认 300 秒（5分钟）。\n\n🔒 此项会直接影响会话探测频率和安全防护行为，仅允许在 AstrBot 传统配置界面修改，Web 面板中为只读显示。",
-        "default": 300
-    },
-    "web_panel_heartbeat_hidden_interval_seconds": {
-        "description": "🌐 后台心跳间隔（秒）",
-        "type": "int",
-        "hint": "当页面处于后台标签页时，浏览器会按此更长的间隔检测会话状态，以减少资源占用和误触发高频连接。默认 1200 秒（20分钟）。\n\n🔒 此项会直接影响会话探测频率和安全防护行为，仅允许在 AstrBot 传统配置界面修改，Web 面板中为只读显示。",
-        "default": 1200
-    },
-    "web_panel_heartbeat_retry_base_seconds": {
-        "description": "🌐 心跳失败重试基准间隔（秒）",
-        "type": "int",
-        "hint": "当心跳因网络异常、超时或临时不可达而失败时，前端会进入缓冲重试期，并以此值为基础进行退避重试。默认 15 秒。\n\n🔒 此项会直接影响会话探测频率和安全防护行为，仅允许在 AstrBot 传统配置界面修改，Web 面板中为只读显示。",
-        "default": 15
-    },
-    "web_panel_heartbeat_retry_max_seconds": {
-        "description": "🌐 心跳失败最大重试间隔（秒）",
-        "type": "int",
-        "hint": "心跳连续失败时，前端会逐步拉长重试间隔，但不会超过此上限。默认 120 秒。\n\n🔒 此项会直接影响会话探测频率和安全防护行为，仅允许在 AstrBot 传统配置界面修改，Web 面板中为只读显示。",
-        "default": 120
     },
     "_desktop_section_header": {
         "description": "═══════════════ 🖥️ 桌面端兼容 ═══════════════",
@@ -165,7 +32,11 @@
     "desktop_mode": {
         "description": "🖥️ 桌面端模式",
         "type": "string",
-        "options": ["auto", "force_desktop", "force_standard"],
+        "options": [
+            "auto",
+            "force_desktop",
+            "force_standard"
+        ],
         "hint": "控制插件如何识别运行环境：\n\n• auto（推荐）：自动检测是否运行在桌面端。检测依据：①环境变量 ASTRBOT_DESKTOP_CLIENT=1 ②数据根目录为 ~/.astrbot ③进程树中存在 Tauri 父进程。首次检测成功后会自动写入本配置项记录结果\n\n• force_desktop：强制以桌面端模式运行。适用于自动检测失败但确实在使用桌面端的情况。开启后：重启指令会附加桌面端提示，日志中输出额外警告\n\n• force_standard：强制以标准版模式运行。适用于非桌面端环境或不需要桌面端兼容提示的场景",
         "default": "auto"
     },
@@ -281,7 +152,12 @@
     "welcome_message_mode": {
         "description": "🎉 入群消息处理模式",
         "type": "string",
-        "options": ["normal", "skip_probability", "skip_all", "parse_only"],
+        "options": [
+            "normal",
+            "skip_probability",
+            "skip_all",
+            "parse_only"
+        ],
         "hint": "控制解析后的入群消息如何进入处理流程（需先启用入群消息解析）。\n\n⚙️ 模式说明：\n• normal：像普通消息一样处理，经过概率筛选+读空气判断\n• skip_probability：跳过概率筛选，但保留读空气判断（推荐）\n• skip_all：跳过概率和读空气筛选，强制让AI处理\n• parse_only：仅将空消息解析为系统提示文本，不做任何特殊处理（不进入AI流程）",
         "default": "skip_probability"
     },
@@ -300,7 +176,10 @@
     "decision_ai_prompt_mode": {
         "description": "读空气AI提示词模式",
         "type": "string",
-        "options": ["append", "override"],
+        "options": [
+            "append",
+            "override"
+        ],
         "hint": "选择额外提示词的应用方式：\n• append（拼接）：在默认系统提示词末尾追加你的补充说明，两者共同生效\n• override（覆盖）：完全替换默认系统提示词，只使用你填写的额外提示词（此时额外提示词不能为空）\n\n⚠️ 注意：无论哪种模式，以下内容都不受影响、不可覆盖，始终由系统按配置动态追加：\n  - 判断型AI人格注入说明（会根据是否包含人格、以及是否指定了判断专用人格而变化）\n  - [系统信息-当前发送者] 发送者姓名和ID\n  - [系统信息-主动对话上下文] 主动对话后的回复上下文\n  - [系统信息-时间与活跃度] 当前时间和活跃度（需开启动态时间段）\n  - [系统信息-关键词触发] 匹配到的关键词（关键词触发时）\n  - [系统信息-兴趣话题] 兴趣话题关键词（需开启拟人增强）\n  - [系统信息-对话疲劳] 连续对话轮次（需开启对话疲劳）\n  - [系统信息-回复密度] 最近回复建议（需开启回复密度限制）\n  - [系统信息-最近未接上对话] 某些场景下，提醒AI更关注最近上下文但不要强行续话\n\n说明：Smart 批次回复提示增强只作用于回复阶段，不会改变这里的读空气判断主体。即使 Smart 模式吸收了多条批次消息，读空气AI仍以当前消息发送者作为主要判断对象。\n\n说明：在 Web 面板中，可在下方对应配置项区域查看默认系统提示词预览；传统配置页面不会显示这段预览。如需查看默认正文，建议到 Web 端对应配置项处查看。",
         "default": "append"
     },
@@ -332,7 +211,10 @@
     "decision_ai_reasoning_log_mode": {
         "description": "🪵 读空气AI推理日志输出模式",
         "type": "string",
-        "options": ["processed", "raw"],
+        "options": [
+            "processed",
+            "raw"
+        ],
         "hint": "控制读空气AI额外推理写入日志的内容形式。\n\n• processed：输出解析后的额外推理块文本（仅标志符之间的内容，较干净）\n• raw：输出模型返回的原始完整文本，便于排查模型是否没有按协议输出\n\n需先开启上方「读空气AI推理过程输出到日志」才有效。",
         "default": "processed"
     },
@@ -363,7 +245,10 @@
     "concurrent_mode": {
         "description": "🔄 并发消息处理模式",
         "type": "string",
-        "options": ["legacy", "smart"],
+        "options": [
+            "legacy",
+            "smart"
+        ],
         "hint": "控制同一群聊多条普通消息并发时的处理策略。\n\n• legacy（默认）：传统等待模式，每条消息独立处理，向后兼容旧行为，也是最兜底的普通消息并发保护模式\n• smart：智能批处理模式。会先按真实到达顺序确定主消息，再让读空气AI和回复AI一起感知当前消息后紧接着收到的追加消息（这些消息可能来自不同用户），减少顺序颠倒和逐条重复回复的问题\n\n⚠️ 这个模式选择主要只作用于普通对话主线，不直接改变主动对话流程本身的处理方式。主动对话相关的会话占用检测、普通链路在缓存转正/保存前等待主动对话释放、以及冷群缓存自动转正判断会话是否仍忙碌时，当前仍然复用通用的传统轮询等待参数（concurrent_wait_max_loops / concurrent_wait_interval）。\n\n⚠️ 选择 smart 模式，不代表传统并发保护完全失效；更准确地说，是普通对话链路会优先尝试 Smart 批处理与批次提示增强，但底层的传统并发等待/兜底保护仍然存在，用于处理无法被 Smart 覆盖的等待、占用和异常路径。\n\n注意：smart 与「群聊等待窗口」（GWW）可以配合，但互不依赖；即使不开 GWW，smart 也可以独立工作。进入 GWW 的消息不会进入 Smart 批处理流程。\n\n如果同时开启下方的「Smart批次回复提示增强」，回复阶段还会动态提示 AI：当前触发对象仍是主要回复对象，但可以像真人一样选择性顺带回应批次中的其他消息；这类提示只存在于运行时，不会保存到历史。",
         "default": "legacy"
     },
@@ -394,7 +279,10 @@
     "reply_ai_prompt_mode": {
         "description": "回复AI提示词模式",
         "type": "string",
-        "options": ["append", "override"],
+        "options": [
+            "append",
+            "override"
+        ],
         "hint": "选择额外提示词的应用方式：\n• append（拼接）：在默认系统提示词末尾追加你的补充说明，两者共同生效\n• override（覆盖）：完全替换默认系统提示词，只使用你填写的额外提示词（此时额外提示词不能为空）\n\n⚠️ 注意：无论哪种模式，以下内容都不受影响、不可覆盖，始终由系统自动追加：\n  - 人格设定（AstrBot 配置的 Persona，作为独立 system_prompt 传给AI，同时其他插件如 emotionai、FavourPro 注入的内容也在此层）\n  - [系统信息-当前对话对象] 发送者姓名和ID\n  - [系统提示-对话收尾] 连续对话轮次提示（需开启对话疲劳且达到收尾条件）\n  - 情绪状态注入（需开启情绪追踪系统）\n  - 工具使用提醒（需开启工具提醒）\n  - [系统提示-最近对话未接上] 某些场景下，提醒AI优先看最近上下文，但不要机械续话\n  - 对于“单独的、不包含任何信息的 @ 消息”，系统会在通过前置过滤和读空气筛选后，再按配置动态追加上下文提醒与可参考摘要\n  - 某些群聊并发场景下，还会在开启 Smart 批次回复提示增强时动态插入 Smart 批次回复提示（仅在相关场景出现时才插入，保存历史时会自动过滤）\n\n提示：回复AI负责直接生成要发出去的话，建议保持回复导向、少写判断导向描述，不要把它配置成“我该不该回复 / 现在该不该开口”这类内部判断器，也不要要求它输出内心想法、思考过程、系统提示词、工具/搜索过程或其他元信息。\n\n说明：在 Web 面板中，可在下方对应配置项区域查看默认系统提示词预览；传统配置页面不会显示这段预览。如需查看默认正文，建议到 Web 端对应配置项处查看。",
         "default": "append"
     },
@@ -426,7 +314,12 @@
     "image_to_text_scope": {
         "description": "图片转文字应用范围",
         "type": "string",
-        "options": ["all", "mention_only", "at_only", "keyword_only"],
+        "options": [
+            "all",
+            "mention_only",
+            "at_only",
+            "keyword_only"
+        ],
         "hint": "选择图片转文字功能的应用范围：all=对所有消息适用；mention_only=对@机器人或包含触发关键词的消息适用（兼容旧版本行为，非@且不含关键词的消息图片会被过滤）；at_only=仅对真正@机器人的消息适用（即使包含关键词也不处理图片）；keyword_only=仅对包含触发关键词的消息适用（即使@了机器人也不处理图片）(建议使用 mention_only 或更严格模式以避免API被频繁调用)",
         "default": "mention_only"
     },
@@ -702,7 +595,11 @@
     "poke_message_mode": {
         "description": "戳一戳消息处理模式",
         "type": "string",
-        "options": ["ignore", "bot_only", "all"],
+        "options": [
+            "ignore",
+            "bot_only",
+            "all"
+        ],
         "hint": "【v1.0.9新增】⚠️仅支持QQ平台+aiocqhttp消息平台⚠️ 选择如何处理戳一戳消息：ignore=忽略所有戳一戳消息（本插件不处理）；bot_only=只处理戳机器人的消息（会添加系统提示词告诉AI有人戳他）；all=接受所有戳一戳消息（会添加系统提示词说明谁戳了谁，让AI知道不是戳他自己）。【自动历史事件保留】本插件会直接复用这里的过滤结果：只有在当前模式下最终允许本插件处理的真实 poke，才会额外把“谁戳了谁”的事件语义保留到历史上下文；被这里忽略掉的 poke 不会进入该解析步骤。",
         "default": "bot_only"
     },
@@ -775,7 +672,10 @@
     "ignore_at_others_mode": {
         "description": "@他人消息忽略模式",
         "type": "string",
-        "options": ["strict", "allow_with_bot"],
+        "options": [
+            "strict",
+            "allow_with_bot"
+        ],
         "hint": "选择如何处理@他人的消息。当前实现语义为：strict = 消息里存在@他人且没有同时@机器人时跳过；allow_with_bot = 消息里存在@他人但也同时@机器人时允许继续处理。多人@、重复@同一人时按完整提及结构统一判断，不只看第一个@对象。需要先启用'启用忽略@他人消息功能'才生效。此配置不影响@全体成员，@全体成员由单独配置控制",
         "default": "strict"
     },
@@ -788,7 +688,12 @@
     "at_all_message_mode": {
         "description": "@全体成员消息处理模式",
         "type": "string",
-        "options": ["normal", "skip_probability", "skip_all", "probability_boost"],
+        "options": [
+            "normal",
+            "skip_probability",
+            "skip_all",
+            "probability_boost"
+        ],
         "hint": "仅在未启用'忽略@全体成员消息功能'时生效。normal=按普通消息处理；skip_probability=跳过概率筛选但保留读空气AI；skip_all=跳过概率筛选和读空气AI，直接进入回复流程；probability_boost=不跳过筛选，但只对当前这条@全体成员消息临时提升概率。默认skip_probability。此配置不受@他人过滤影响",
         "default": "skip_probability"
     },
@@ -1256,7 +1161,10 @@
     "frequency_ai_reasoning_log_mode": {
         "description": "🪵 频率判断AI推理日志输出模式",
         "type": "string",
-        "options": ["processed", "raw"],
+        "options": [
+            "processed",
+            "raw"
+        ],
         "hint": "控制频率判断AI额外推理写入日志的内容形式。\n\n• processed：输出解析后的额外推理块文本（仅标志符之间的内容，较干净）\n• raw：输出模型返回的原始完整文本，便于排查模型是否没有按协议输出\n\n需先开启上方「频率判断AI推理过程输出到日志」才有效。",
         "default": "processed"
     },
@@ -1505,7 +1413,10 @@
     "proactive_ai_reasoning_log_mode": {
         "description": "🪵 主动对话判断AI推理日志输出模式",
         "type": "string",
-        "options": ["processed", "raw"],
+        "options": [
+            "processed",
+            "raw"
+        ],
         "hint": "控制主动对话判断AI额外推理写入日志的内容形式。\n\n• processed：输出解析后的额外推理块文本（仅标志符之间的内容，较干净）\n• raw：输出模型返回的原始完整文本，便于排查模型是否没有按协议输出\n\n需先开启上方「主动对话判断AI推理过程输出到日志」才有效。",
         "default": "processed"
     },
@@ -1747,19 +1658,114 @@
         "description": "💎 水消息概率降低幅度",
         "type": "float",
         "hint": "检测到水消息时在当前概率基础上减少的值（范围0-0.5）。减少后概率不低于0。\n\n例如：当前概率0.3，设置0.10，则水消息触发时概率变为0.20，减少AI对无意义闲聊的介入。\n\n建议值：0.05-0.2。设置为0则不降低（仍检测但不调整）。",
-        "default": 0.10
+        "default": 0.1
     },
     "message_quality_water_words": {
         "description": "💎 水消息词列表（整句完整匹配）",
         "type": "list",
         "hint": "消息文本去除首尾空格后完全等于列表中某个词时，触发水消息概率降低。可直接增删改，配置是什么就是什么。\n\n注意：这是完整匹配，消息必须完全等于该词才触发，不是包含关系。",
-        "default": ["哈", "哈哈", "哈哈哈", "hh", "hhh", "hhhh", "嗯", "嗯嗯", "哦", "哦哦", "噢", "啊", "呃", "额", "好", "好的", "好吧", "行", "对", "是的", "是", "ok", "OK", "Ok", "6", "66", "666", "6666", "牛", "草", "笑死", "确实", "真的假的", "离谱", "无语", "emmm", "emm", "嗯嗯嗯", "哦哦哦", "233", "2333", "23333", "www", "哈哈哈哈", "呵呵", "嘻嘻", "嘿嘿", "嗯呢", "好好", "哇", "哦豁", "...", "……"]
+        "default": [
+            "哈",
+            "哈哈",
+            "哈哈哈",
+            "hh",
+            "hhh",
+            "hhhh",
+            "嗯",
+            "嗯嗯",
+            "哦",
+            "哦哦",
+            "噢",
+            "啊",
+            "呃",
+            "额",
+            "好",
+            "好的",
+            "好吧",
+            "行",
+            "对",
+            "是的",
+            "是",
+            "ok",
+            "OK",
+            "Ok",
+            "6",
+            "66",
+            "666",
+            "6666",
+            "牛",
+            "草",
+            "笑死",
+            "确实",
+            "真的假的",
+            "离谱",
+            "无语",
+            "emmm",
+            "emm",
+            "嗯嗯嗯",
+            "哦哦哦",
+            "233",
+            "2333",
+            "23333",
+            "www",
+            "哈哈哈哈",
+            "呵呵",
+            "嘻嘻",
+            "嘿嘿",
+            "嗯呢",
+            "好好",
+            "哇",
+            "哦豁",
+            "...",
+            "……"
+        ]
     },
     "message_quality_question_words": {
         "description": "💎 疑问词列表（包含匹配）",
         "type": "list",
         "hint": "消息文本中包含列表中某个词时，触发疑问句概率提升。问号（？?）始终自动检测，无需填入。可直接增删改，配置是什么就是什么。\n\n注意：这是包含匹配，消息中只要含有该词就触发，不需要完整等于。",
-        "default": ["吗", "呢", "么", "嘛", "咋", "啥", "怎么", "怎样", "怎办", "咋整", "什么", "为什么", "为啥", "如何", "哪里", "哪儿", "哪个", "哪些", "谁", "几", "多少", "是不是", "能不能", "可不可以", "有没有", "会不会", "行不行", "好不好", "对不对", "请问", "求助", "帮我", "告诉我", "怎么回事", "什么意思", "啥意思", "不懂", "不会", "求教", "请教"]
+        "default": [
+            "吗",
+            "呢",
+            "么",
+            "嘛",
+            "咋",
+            "啥",
+            "怎么",
+            "怎样",
+            "怎办",
+            "咋整",
+            "什么",
+            "为什么",
+            "为啥",
+            "如何",
+            "哪里",
+            "哪儿",
+            "哪个",
+            "哪些",
+            "谁",
+            "几",
+            "多少",
+            "是不是",
+            "能不能",
+            "可不可以",
+            "有没有",
+            "会不会",
+            "行不行",
+            "好不好",
+            "对不对",
+            "请问",
+            "求助",
+            "帮我",
+            "告诉我",
+            "怎么回事",
+            "什么意思",
+            "啥意思",
+            "不懂",
+            "不会",
+            "求教",
+            "请教"
+        ]
     },
     "enable_dynamic_proactive_probability": {
         "description": "【v1.1.0-模式2】启用动态时间段概率调整（主动对话）",
@@ -1943,14 +1949,22 @@
     "group_wait_window_at_mode": {
         "description": "⏳ @消息窗口行为模式",
         "type": "string",
-        "options": ["force_close", "intercept", "immediate", "bypass"],
+        "options": [
+            "force_close",
+            "intercept",
+            "immediate",
+            "bypass"
+        ],
         "hint": "控制@消息与等待窗口的交互方式。这里的@消息核心上仍然指@AI自己的消息，不是任意包含At的消息。普通@他人、@多个他人、重复@同一人不应仅因为存在At就误触发窗口打断。\n\nforce_close（默认）= @AI消息会开启窗口；窗口期内再次收到@AI消息时，若命中下方名单，则会先剥离AI自己的At组件、按窗口缓存链处理后立即结束窗口；未命中名单时回退为原有强制结束窗口，@AI消息得到即时回复。\n\nintercept = @AI消息会开启窗口；窗口期内收到@AI消息会剥离@AI自己的At组件，作为普通消息缓存到窗口中。配合下方的@合并名单使用，可精细控制哪些用户的@AI消息被窗口侧接管。剥离时只会移除AI自己的At，不会移除或折叠其他人的At。\n\nimmediate = @AI消息不会开启窗口；但若已有窗口，窗口期内再次收到@AI消息时，命中下方名单则会先剥离AI自己的At组件、按窗口缓存链处理后立即结束窗口；未命中名单时回退为原有强制结束窗口。\n\nbypass = @AI消息不会开启窗口，也不会影响已有窗口，@AI消息完全独立处理。窗口和@AI消息互不干扰。\n\n需要先启用「启用群聊等待窗口」。默认force_close。\n\n⚠️ 兼容性：如果之前使用过「窗口期内合并@消息」开关（merge_at_messages），升级后会自动迁移为intercept模式。",
         "default": "force_close"
     },
     "group_wait_window_merge_at_list_mode": {
         "description": "⏳ @合并名单模式",
         "type": "string",
-        "options": ["whitelist", "blacklist"],
+        "options": [
+            "whitelist",
+            "blacklist"
+        ],
         "hint": "控制下方名单的作用方式。\n\nwhitelist = 白名单模式：仅名单内的用户在窗口期内的@AI消息会被窗口侧接管，其余用户的@AI消息仍按当前 at_mode 的原行为处理。\nblacklist = 黑名单模式：名单内的用户不受此功能影响（其@AI消息仍按当前 at_mode 的原行为处理），其余用户的@AI消息会被窗口侧接管。\n\n在「@消息窗口行为模式」设为 intercept / immediate / force_close 时生效。命中后，窗口逻辑只会洗刷AI自己的At组件，不会移除、折叠或清空其他人的At；其他人的原始At与对应解析仍会继续进入缓存、转正和历史。默认whitelist。",
         "default": "whitelist"
     },
@@ -1963,14 +1977,22 @@
     "group_wait_window_keyword_mode": {
         "description": "⏳ 关键词消息窗口行为模式",
         "type": "string",
-        "options": ["intercept", "force_close", "immediate", "bypass"],
+        "options": [
+            "intercept",
+            "force_close",
+            "immediate",
+            "bypass"
+        ],
         "hint": "控制触发关键词的消息与等待窗口的交互方式：\n\nintercept（默认）= 关键词消息会开启窗口；窗口期内收到关键词消息会被缓存（关键词标记\"打掉\"），和普通消息一起批量处理。\n\nforce_close = 关键词消息会开启窗口；窗口期内收到关键词消息会立即结束窗口，关键词消息得到正常回复。\n\nimmediate = 关键词消息不会开启窗口，但会立即结束已有窗口，关键词消息得到正常回复。关键词消息永远不参与等待。\n\nbypass = 关键词消息不会开启窗口，也不会影响已有窗口，关键词消息完全独立处理。\n\n⚠️ 前置条件：此配置仅对「触发关键词列表」（trigger_keywords）中已配置的关键词生效。如果触发关键词列表为空，则不存在关键词消息，此配置无实际效果。\n\n需要先启用「启用群聊等待窗口」。默认intercept。",
         "default": "intercept"
     },
     "group_wait_window_poke_mode": {
         "description": "⏳ 戳一戳窗口行为模式",
         "type": "string",
-        "options": ["bypass", "force_close"],
+        "options": [
+            "bypass",
+            "force_close"
+        ],
         "hint": "控制戳一戳消息与等待窗口的交互方式：\n\nbypass（默认）= 戳一戳不开启窗口，也不影响已有窗口，完全独立处理。\n\nforce_close = 戳一戳不开启窗口，但如果有活跃窗口会立即结束窗口，戳一戳得到正常回复。\n\n注意：戳一戳消息永远不会开启等待窗口，也不会被缓存到窗口中。此配置仅控制戳一戳对已有窗口的影响。\n\n⚠️ 前置条件：此配置仅在「戳一戳消息处理模式」（poke_message_mode）不为 ignore 时生效。如果戳一戳已被设为忽略，则戳一戳消息不会进入插件处理流程，此配置无实际效果。此外，戳一戳功能仅支持 aiocqhttp 平台（QQ）。\n\n需要先启用「启用群聊等待窗口」。默认bypass。",
         "default": "bypass"
     },

@@ -1,0 +1,14 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# 运行时生成的数据（插件数据目录应由 AstrBot 管理）
+data/
+web_data/
+
+# 临时文件
+_tmp_*
+*.log
