@@ -255,6 +255,7 @@ class PanelApi:
             fallback = Path(__file__).parent.parent / "data"
             return fallback.resolve()
 
+    @staticmethod
     def _split_compound_key(key: str) -> tuple[str | None, str | None, str | None]:
         """将复合 key 拆为 (platform, chat_type, chat_id)。
         格式: {platform}_{chat_type}_{chat_id}，chat_id 自身可含下划线。
