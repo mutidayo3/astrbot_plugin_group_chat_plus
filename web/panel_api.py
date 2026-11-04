@@ -1650,7 +1650,7 @@ class PanelApi:
         try:
             from ..utils.reply_density_manager import ReplyDensityManager
 
-            density_data = ReplyDensityManager.get_density_info(session)
+            density_data = await ReplyDensityManager.get_density_info(session)
         except Exception:
             pass
         detail["reply_density"] = density_data if isinstance(density_data, dict) else {}

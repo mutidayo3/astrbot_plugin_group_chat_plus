@@ -1,5 +1,13 @@
 ## 📝 更新日志
 
+### V1.2.4.hotfix.2 (2026-11-04)
+
+**修复面板「回复密度」数据永远为空的问题**
+
+- **补上遗漏的 `await`** — `web/panel_api.py` 的 `_build_session_detail` 调用 `ReplyDensityManager.get_density_info()` 时漏了 `await`，拿到的是协程对象而非结果。由于类型检查不通过，`reply_density` 字段长期固定返回 `{}`，面板会话详情里的回复密度卡片（当前次数 / 上限 / 窗口 / 占用比例）始终显示为空数据
+- **消除运行时告警** — 同一处每次请求都会产生 `RuntimeWarning: coroutine 'ReplyDensityManager.get_density_info' was never awaited`，并泄漏一个未被回收的协程；修复后告警消失
+- **影响范围** — 仅面板数据展示，不影响消息处理与回复逻辑
+
 ### V1.2.4.hotfix.1 (2026-11-04)
 
 **修复「启用的群组列表」等列表配置项找不到保存入口、无法保存的问题**

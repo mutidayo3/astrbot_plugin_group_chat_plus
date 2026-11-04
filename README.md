@@ -4,7 +4,7 @@
 
 <div align="center">
 
-[![Version](https://img.shields.io/badge/version-V1.2.4.hotfix.1-blue.svg)](https://github.com/Him666233/astrbot_plugin_group_chat_plus)
+[![Version](https://img.shields.io/badge/version-V1.2.4.hotfix.2-blue.svg)](https://github.com/Him666233/astrbot_plugin_group_chat_plus)
 [![AstrBot](https://img.shields.io/badge/AstrBot-%E2%89%A5v4.11.0-green.svg)](https://github.com/AstrBotDevs/AstrBot)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-orange.svg)](LICENSE)
 
