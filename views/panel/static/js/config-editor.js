@@ -366,12 +366,29 @@ const ConfigEditor = {
 
     /** 列表编辑器 */
     _listControl(key, val) {
-        const list = Array.isArray(val) ? [...val] : [];
+        // 兼容历史数据：字符串形式（如 "123,456"）也能正常展示
+        let list;
+        if (Array.isArray(val)) {
+            list = [...val];
+        } else if (typeof val === 'string' && val.trim()) {
+            list = val.split(/[\s,，、;；]+/).map(s => s.trim()).filter(Boolean);
+        } else {
+            list = [];
+        }
+
         const wrap = document.createElement('div');
         wrap.className = 'list-editor';
 
         const renderItems = () => {
             wrap.innerHTML = '';
+
+            if (list.length === 0) {
+                const empty = document.createElement('div');
+                empty.className = 'list-empty-hint';
+                empty.textContent = '（空列表）';
+                wrap.appendChild(empty);
+            }
+
             list.forEach((item, i) => {
                 const row = document.createElement('div');
                 row.className = 'list-item';
@@ -379,8 +396,15 @@ const ConfigEditor = {
                 input.type = 'text';
                 input.value = typeof item === 'object' ? JSON.stringify(item) : String(item);
                 input.addEventListener('change', () => {
-                    list[i] = this._parseListItem(input.value);
+                    list[i] = this._parseListItem(input.value.trim());
                     TechTree.setVal(key, [...list]);
+                });
+                // 回车提交当前项，避免输入后不生效
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        input.blur();
+                    }
                 });
                 const del = document.createElement('button');
                 del.className = 'btn-icon';
@@ -400,16 +424,37 @@ const ConfigEditor = {
             addRow.className = 'list-add-row';
             const addInput = document.createElement('input');
             addInput.type = 'text';
-            addInput.placeholder = '添加新项...';
+            addInput.placeholder = '添加（可批量粘贴，回车确认）';
+
             const addBtn = document.createElement('button');
             addBtn.className = 'btn btn-sm';
             addBtn.textContent = '+';
+            addBtn.type = 'button';
+
+            const commitAdd = () => {
+                const added = this._appendListValues(list, addInput.value);
+                if (added > 0) {
+                    TechTree.setVal(key, [...list]);
+                    renderItems();
+                    // renderItems 重建了输入框，重新聚焦到新的添加行
+                    const next = wrap.querySelector('.list-add-row input');
+                    if (next) next.focus();
+                }
+                return added;
+            };
+
             addBtn.addEventListener('click', () => {
-                if (!addInput.value.trim()) return;
-                list.push(this._parseListItem(addInput.value.trim()));
-                TechTree.setVal(key, [...list]);
-                renderItems();
+                commitAdd();
             });
+            addInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    commitAdd();
+                } else if (e.key === 'Escape') {
+                    addInput.value = '';
+                }
+            });
+
             addRow.appendChild(addInput);
             addRow.appendChild(addBtn);
             wrap.appendChild(addRow);
@@ -417,6 +462,37 @@ const ConfigEditor = {
 
         renderItems();
         return wrap;
+    },
+
+    /**
+     * 把用户输入追加到列表中。
+     * 支持一次粘贴多个值（逗号/中文逗号/顿号/分号/空白/换行分隔），自动去重。
+     * @returns {number} 实际新增条数
+     */
+    _appendListValues(list, raw) {
+        const parts = String(raw == null ? '' : raw)
+            .split(/[\s,，、;；]+/)
+            .map(s => s.trim())
+            .filter(Boolean);
+        if (parts.length === 0) return 0;
+
+        let added = 0;
+        parts.forEach(part => {
+            const parsed = this._parseListItem(part);
+            const exists = list.some(existing => this._isSameListItem(existing, parsed));
+            if (!exists) {
+                list.push(parsed);
+                added += 1;
+            }
+        });
+        return added;
+    },
+
+    /** 判断两个列表项是否等价 */
+    _isSameListItem(a, b) {
+        if (a === b) return true;
+        const norm = v => (typeof v === 'object' ? JSON.stringify(v) : String(v).trim());
+        return norm(a) === norm(b);
     },
 
     /** 尝试解析列表项（JSON 对象或字符串） */

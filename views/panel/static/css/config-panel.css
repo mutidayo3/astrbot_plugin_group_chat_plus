@@ -23,6 +23,50 @@
     padding: 16px;
 }
 
+/* ========== 面板底部保存栏（常驻，避免找不到保存入口） ========== */
+.config-panel-footer {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 14px;
+    padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid var(--glass-border);
+    background: var(--bg-secondary);
+}
+
+.config-panel-save-status {
+    font-size: 11px;
+    line-height: 1.3;
+    color: var(--text-muted);
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.config-panel-save-status.has-changes {
+    color: var(--accent-orange);
+    font-weight: 600;
+}
+
+#btn-save-config-panel {
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+#btn-save-config-panel[disabled] {
+    opacity: 0.45;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+/* 列表编辑器：添加行回车提示 */
+.list-add-row input::placeholder {
+    color: var(--text-muted);
+}
+
 /* ========== Config Field ========== */
 .config-field {
     position: relative;
@@ -281,6 +325,11 @@
 }
 .list-add-row input {
     flex: 1;
+}
+.list-empty-hint {
+    font-size: 11px;
+    color: var(--text-muted);
+    padding: 2px 0;
 }
 
 /* ========== Number Input ========== */

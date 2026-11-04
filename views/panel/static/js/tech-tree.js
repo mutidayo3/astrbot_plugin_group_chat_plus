@@ -125,14 +125,40 @@ const TechTree = {
 
     async save() {
         if (!this.hasChanges()) return;
-        const res = await Api.reloadPlugin(this._modified);
-        if (res.ok) {
-            this._config = { ...this._config, ...this._modified };
-            this._modified = {};
+        if (this._saving) return;
+        this._saving = true;
+        try {
+            const res = await Api.reloadPlugin(this._modified);
+            if (res.ok) {
+                this._config = { ...this._config, ...this._modified };
+                this._modified = {};
+                this._updateSaveButton();
+                this._updateAllStatuses();
+                // 重新渲染当前步骤面板，清掉「已修改」标记
+                this._rerenderActivePanel();
+                Utils.toast('配置已保存，插件重启成功', 'success');
+            } else {
+                Utils.toast(res.msg || '保存失败', 'error');
+            }
+        } finally {
+            this._saving = false;
             this._updateSaveButton();
-            Utils.toast('配置已保存，插件重启成功', 'success');
-        } else {
-            Utils.toast(res.msg || '保存失败', 'error');
+        }
+    },
+
+    /** 重新渲染当前打开的步骤配置面板（保存后清掉修改标记） */
+    _rerenderActivePanel() {
+        if (!this._activeStepId) return;
+        const body = document.getElementById('config-panel-body');
+        const step = FlowData.getNodeById(this._activeStepId);
+        if (!body || !step || step.internal) return;
+        if (typeof ConfigEditor === 'undefined') return;
+        ConfigEditor.render(body, step, this._schema, null);
+        if (step.shared && step.sharedFrom) {
+            const banner = document.createElement('div');
+            banner.className = 'shared-config-banner';
+            banner.innerHTML = '🔗 此配置与<strong>消息回复流水线</strong>共用，修改将同时影响两条流水线';
+            body.insertBefore(banner, body.firstChild);
         }
     },
 
@@ -155,8 +181,29 @@ const TechTree = {
     },
 
     _updateSaveButton() {
+        const changedCount = Object.keys(this._modified).length;
+        const hasChanges = changedCount > 0;
+
+        // 顶部栏保存按钮（有改动才出现）
         const btn = document.getElementById('btn-save-config');
-        if (btn) btn.classList.toggle('hidden', !this.hasChanges());
+        if (btn) btn.classList.toggle('hidden', !hasChanges);
+
+        // 配置面板底部常驻保存按钮（无改动时置灰，保证保存入口始终可见）
+        const panelBtn = document.getElementById('btn-save-config-panel');
+        if (panelBtn) {
+            panelBtn.disabled = !hasChanges || !!this._saving;
+            panelBtn.textContent = this._saving
+                ? '⏳ 保存中...'
+                : (hasChanges ? `💾 保存并重载 (${changedCount})` : '💾 保存并重载');
+        }
+
+        const status = document.getElementById('config-panel-save-status');
+        if (status) {
+            status.textContent = hasChanges
+                ? `${changedCount} 个配置项待保存`
+                : '暂无未保存修改';
+            status.classList.toggle('has-changes', hasChanges);
+        }
     },
 
     // ==================== DOM scaffolding ====================
@@ -1218,6 +1265,7 @@ const TechTree = {
         if (typeof App !== 'undefined') {
             App.setConfigPanelOpen?.(true);
         }
+        this._updateSaveButton();
 
         // Internal steps with no configurable keys
         if (step.internal) {
@@ -2296,6 +2344,16 @@ const TechTree = {
         } else {
             console.warn('未找到btn-save-config按钮');
         }
+
+        // 配置面板底部常驻保存按钮
+        const btnSavePanel = document.getElementById('btn-save-config-panel');
+        if (btnSavePanel) {
+            btnSavePanel.addEventListener('click', () => {
+                if (btnSavePanel.disabled) return;
+                this.save();
+            });
+        }
+        this._updateSaveButton();
 
         const btnReload = document.getElementById('btn-reload');
         console.log('btnReload元素:', btnReload);
